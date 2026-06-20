@@ -196,29 +196,57 @@
     @media (max-width:860px){ .work-grid{ grid-template-columns:1fr; } }
 
     .card{
-      position:relative; display:flex; flex-direction:column; justify-content:space-between;
+      position:relative; display:flex; cursor:pointer;
       min-height:clamp(260px,30vw,360px); padding:clamp(1.6rem,2.6vw,2.4rem);
       border:1px solid var(--line); border-radius:20px; overflow:hidden;
       background:linear-gradient(160deg, var(--black400), var(--black));
-      transition:transform .6s var(--ease), border-color .6s var(--ease);
+      transform-style:preserve-3d; will-change:transform;
+      transition:transform .5s var(--ease), border-color .5s var(--ease);
+      --mx:50%; --my:50%;
     }
+    /* cursor-tracking spotlight */
     .card::before{
-      content:""; position:absolute; inset:0; opacity:0; transition:opacity .6s var(--ease);
-      background:radial-gradient(120% 120% at 0% 0%, rgba(161,236,255,.10), transparent 55%);
+      content:""; position:absolute; inset:0; z-index:2; opacity:0; pointer-events:none;
+      transition:opacity .5s var(--ease);
+      background:radial-gradient(260px 260px at var(--mx) var(--my), rgba(161,236,255,.16), transparent 60%);
     }
-    .card{ cursor:pointer; }
-    .card:hover{ transform:translateY(-6px); border-color:rgba(250,250,250,0.28); }
-    .card:focus-visible{ outline:1px solid var(--accent); outline-offset:3px; }
+    .card:hover{ border-color:rgba(250,250,250,0.30); }
     .card:hover::before{ opacity:1; }
+    .card.tilt{ transition:transform .1s linear, border-color .5s var(--ease); }
+    .card:focus-visible{ outline:1px solid var(--accent); outline-offset:3px; }
     .card.feat{ grid-column:span 2; min-height:clamp(300px,34vw,420px); }
     @media (max-width:860px){ .card.feat{ grid-column:span 1; } }
 
-    .card .top{ display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; position:relative; z-index:2; }
+    /* signature animated canvas */
+    .card .sig{ position:absolute; inset:0; z-index:1; width:100%; height:100%; opacity:.5; pointer-events:none; transition:opacity .6s var(--ease); }
+    .card:hover .sig{ opacity:.92; }
+
+    /* spinning gradient ring on hover */
+    .card .ring{
+      position:absolute; inset:0; z-index:2; border-radius:inherit; padding:1px; pointer-events:none;
+      background:conic-gradient(from var(--a), transparent 0deg, var(--accent) 60deg, var(--warm) 140deg, transparent 220deg);
+      -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor; mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite:exclude;
+      opacity:0; transition:opacity .5s var(--ease);
+    }
+    .card:hover .ring{ opacity:.85; animation:ring-spin 4.5s linear infinite; }
+    @keyframes ring-spin{ to{ --a:360deg; } }
+
+    /* 3D-popped content layer */
+    .card .card-inner{
+      position:relative; z-index:3; flex:1; display:flex; flex-direction:column; justify-content:space-between;
+      transform:translateZ(26px); transform-style:preserve-3d;
+    }
+
+    .card .top{ display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
     .card .lang{ display:inline-flex; align-items:center; gap:.5rem; font-size:.74rem; letter-spacing:.16em; text-transform:uppercase; color:var(--grey); }
-    .card .lang .dot{ width:9px; height:9px; border-radius:50%; background:var(--grey); }
+    .card .lang .dot{ width:9px; height:9px; border-radius:50%; background:var(--grey); box-shadow:0 0 10px currentColor; }
     .card .stars{ font-size:.8rem; color:var(--grey); display:inline-flex; gap:.35rem; align-items:center; }
 
-    .card .body{ position:relative; z-index:2; margin-top:auto; }
+    .card .body{ margin-top:auto; }
+    @media (prefers-reduced-motion: reduce){
+      .card .sig{ display:none; } .card:hover .ring{ animation:none; } .card.tilt{ transform:none!important; }
+    }
     .card h3{ font-family:var(--serif); font-weight:400; font-size:clamp(1.5rem,2.8vw,2.4rem); line-height:1.05; letter-spacing:-.01em; margin-bottom:.7rem; }
     .card.feat h3{ font-size:clamp(2rem,4.6vw,3.6rem); }
     .card p{ color:var(--grey); font-size:.95rem; max-width:60ch; line-height:1.6; }
@@ -435,6 +463,169 @@
 
     const esc = s => (s==null?"":String(s)).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+    const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    /* ---------- classify a repo into a visual signature ---------- */
+    function categoryOf(r){
+      const hay = (r.name + " " + (r.description||"") + " " + (r.topics||[]).join(" ")).toLowerCase();
+      if(/osint|intel|censor|palimpsest|scraper|geopolit|surveil|monitor|observab|drug-policy|harm-reduction|graph/.test(hay)) return "network";
+      if(/financ|fintech|treasur|market|trading|terminal|crypto|defi|bridge|monero|price|chart|stock|bond|quant|economic|money|risk/.test(hay)) return "wave";
+      if(/\bmcp\b|agent|\bai\b|\bllm\b|claude|\brag\b|fact|model-context|exam|medprep|study|gpt|edtech/.test(hay)) return "orbit";
+      return "grid"; /* tools, saas, design, forms */
+    }
+
+    /* ---------- deterministic PRNG seeded by repo name ---------- */
+    function mulberry32(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+    function hashStr(s){ let h = 2166136261; for(let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+    /* ============================================================
+       SIGNATURE ENGINE — one rAF ticker drives every visible card
+       ============================================================ */
+    const SIG = { items:[], running:false, t0:0 };
+    function initSignatures(scope){
+      if(REDUCED) return;
+      SIG.items = [];
+      scope.querySelectorAll(".card").forEach(card => {
+        const cv = card.querySelector(".sig"); if(!cv) return;
+        const ctx = cv.getContext("2d", { alpha:true });
+        const seed = hashStr(card.dataset.seed || "x");
+        const item = { card, cv, ctx, cat:card.dataset.cat, seed, rng:mulberry32(seed), W:0, H:0, dpr:1, vis:false, state:null };
+        sizeCanvas(item);
+        SIG.items.push(item);
+        // only animate when on-screen
+        sigIO.observe(card);
+      });
+      if(!SIG.bound){ SIG.bound = true; window.addEventListener("resize", () => SIG.items.forEach(sizeCanvas), { passive:true }); }
+      if(!SIG.running){ SIG.running = true; requestAnimationFrame(tick); }
+    }
+    function sizeCanvas(it){
+      const r = it.cv.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+      it.W = Math.max(1, r.width); it.H = Math.max(1, r.height); it.dpr = dpr;
+      it.cv.width = it.W * dpr; it.cv.height = it.H * dpr;
+      it.ctx.setTransform(dpr,0,0,dpr,0,0);
+      it.state = null; // force re-seed of geometry at new size
+    }
+    const sigIO = new IntersectionObserver(es => es.forEach(e => {
+      const it = SIG.items.find(x => x.card === e.target); if(it) it.vis = e.isIntersecting;
+    }), { threshold:0.01 });
+
+    function tick(ts){
+      if(!SIG.t0) SIG.t0 = ts;
+      const t = (ts - SIG.t0) / 1000;
+      for(const it of SIG.items){ if(it.vis && !document.hidden) drawSig(it, t); }
+      requestAnimationFrame(tick);
+    }
+
+    function drawSig(it, t){
+      const { ctx, W, H } = it;
+      ctx.clearRect(0,0,W,H);
+      if(it.cat === "network") drawNetwork(it, t);
+      else if(it.cat === "wave") drawWave(it, t);
+      else if(it.cat === "orbit") drawOrbit(it, t);
+      else drawGrid(it, t);
+    }
+
+    /* --- network: drifting node constellation with travelling pulse (OSINT/intel) --- */
+    function drawNetwork(it, t){
+      const { ctx, W, H, rng } = it;
+      if(!it.state){
+        const n = Math.round(10 + rng()*6), nodes = [];
+        for(let i=0;i<n;i++) nodes.push({ x:rng()*W, y:rng()*H, a:rng()*Math.PI*2, sp:.06+rng()*.12, r:6+rng()*22 });
+        it.state = { nodes, ox:nodes.map(nd=>nd.x), oy:nodes.map(nd=>nd.y) };
+      }
+      const { nodes, ox, oy } = it.state;
+      nodes.forEach((nd,i) => { nd.x = ox[i] + Math.cos(t*nd.sp + nd.a)*nd.r; nd.y = oy[i] + Math.sin(t*nd.sp*1.3 + nd.a)*nd.r; });
+      ctx.lineWidth = 1;
+      for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++){
+        const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y, d=Math.hypot(dx,dy);
+        if(d < W*0.28){ ctx.strokeStyle = `rgba(161,236,255,${(1-d/(W*0.28))*0.22})`; ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke(); }
+      }
+      nodes.forEach(nd => { ctx.fillStyle = "rgba(161,236,255,0.6)"; ctx.beginPath(); ctx.arc(nd.x,nd.y,1.6,0,7); ctx.fill(); });
+      // travelling pulse along an edge
+      const k = Math.floor(t*0.4) % nodes.length, a = nodes[k], b = nodes[(k+3)%nodes.length], p = (t*0.4)%1;
+      ctx.fillStyle = "rgba(255,171,152,0.9)"; ctx.beginPath();
+      ctx.arc(a.x+(b.x-a.x)*p, a.y+(b.y-a.y)*p, 2.4, 0, 7); ctx.fill();
+    }
+
+    /* --- wave: scrolling layered sparklines (finance/markets/crypto) --- */
+    function drawWave(it, t){
+      const { ctx, W, H, rng } = it;
+      if(!it.state){ it.state = { ph:[rng()*9, rng()*9, rng()*9], fr:[1.3+rng(), 2.1+rng(), .9+rng()*.6] }; }
+      const { ph, fr } = it.state, cols = ["rgba(161,236,255,.5)","rgba(255,171,152,.4)","rgba(199,199,199,.25)"];
+      for(let l=0;l<3;l++){
+        ctx.beginPath();
+        const baseY = H*(0.5 + (l-1)*0.16), amp = H*0.12*(1-l*0.18);
+        for(let x=0;x<=W;x+=6){
+          const y = baseY + Math.sin((x/W)*fr[l]*Math.PI*2 + t*(0.9+l*0.35) + ph[l]) * amp
+                          + Math.sin((x/W)*7 + t*0.6)*amp*0.18;
+          x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.strokeStyle = cols[l]; ctx.lineWidth = l===0?1.6:1; ctx.stroke();
+      }
+      // moving vertical scanline
+      const sx = (t*40) % W;
+      ctx.strokeStyle = "rgba(161,236,255,.10)"; ctx.beginPath(); ctx.moveTo(sx,0); ctx.lineTo(sx,H); ctx.stroke();
+    }
+
+    /* --- orbit: particles circling a glowing core (AI / MCP / agents) --- */
+    function drawOrbit(it, t){
+      const { ctx, W, H, rng } = it;
+      const cx = W*0.5, cy = H*0.5;
+      if(!it.state){ const n = 3 + Math.round(rng()*3), ps = []; for(let i=0;i<n;i++) ps.push({ rad:(0.16+i*0.12+rng()*0.05)*Math.min(W,H), sp:(0.5+rng())*(rng()>.5?1:-1), a:rng()*7, sz:1.4+rng()*1.6 }); it.state = { ps }; }
+      // core glow
+      const g = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.min(W,H)*0.4);
+      g.addColorStop(0,"rgba(161,236,255,0.28)"); g.addColorStop(1,"rgba(161,236,255,0)");
+      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle = "rgba(250,250,250,0.85)"; ctx.beginPath(); ctx.arc(cx,cy,2.4,0,7); ctx.fill();
+      it.state.ps.forEach(p => {
+        const ang = p.a + t*p.sp, x = cx + Math.cos(ang)*p.rad, y = cy + Math.sin(ang)*p.rad*0.7;
+        ctx.strokeStyle = "rgba(255,171,152,0.10)"; ctx.beginPath(); ctx.ellipse(cx,cy,p.rad,p.rad*0.7,0,0,7); ctx.stroke();
+        ctx.fillStyle = "rgba(255,171,152,0.85)"; ctx.beginPath(); ctx.arc(x,y,p.sz,0,7); ctx.fill();
+      });
+    }
+
+    /* --- grid: morphing dot matrix with a wave of scale (tools / SaaS / design) --- */
+    function drawGrid(it, t){
+      const { ctx, W, H } = it;
+      const gap = 26, ox = (W % gap)/2, oy = (H % gap)/2;
+      for(let x=ox; x<W; x+=gap) for(let y=oy; y<H; y+=gap){
+        const d = Math.sin((x*0.02 + y*0.02) - t*1.4);
+        const s = 0.5 + (d*0.5+0.5)*2.0;
+        const al = 0.08 + (d*0.5+0.5)*0.28;
+        ctx.fillStyle = `rgba(199,199,199,${al})`;
+        ctx.beginPath(); ctx.arc(x,y,s,0,7); ctx.fill();
+      }
+      // a roaming square outline (the Textura glyph motif)
+      const px = (Math.sin(t*0.5)*0.5+0.5)*(W-60)+10, py = (Math.cos(t*0.37)*0.5+0.5)*(H-60)+10;
+      ctx.strokeStyle = "rgba(161,236,255,0.35)"; ctx.lineWidth = 1; ctx.strokeRect(px,py,28,28);
+    }
+
+    /* ============================================================
+       TILT + SPOTLIGHT — cursor-driven 3D, fine-pointer only
+       ============================================================ */
+    function initTilt(scope){
+      if(REDUCED || !window.matchMedia("(hover:hover) and (pointer:fine)").matches) return;
+      scope.querySelectorAll(".card").forEach(card => {
+        let raf = 0;
+        const onMove = e => {
+          const r = card.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+          card.style.setProperty("--mx", (px*100).toFixed(1)+"%");
+          card.style.setProperty("--my", (py*100).toFixed(1)+"%");
+          if(raf) return;
+          raf = requestAnimationFrame(() => {
+            raf = 0;
+            const rx = (0.5 - py) * 7, ry = (px - 0.5) * 9;
+            card.style.transform = `rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateZ(8px)`;
+          });
+        };
+        card.addEventListener("pointerenter", () => card.classList.add("tilt"));
+        card.addEventListener("pointermove", onMove);
+        card.addEventListener("pointerleave", () => { card.classList.remove("tilt"); card.style.transform = ""; });
+      });
+    }
+
     /* ---------- render the work grid ---------- */
     function renderRepos(repos){
       const clean = repos
@@ -449,20 +640,27 @@
         const hp = (r.homepage && /^https?:\/\//.test(r.homepage)) ? r.homepage : "";
         const live = hp ? `<a class="open live" href="${esc(hp)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Live demo ↗</a>` : "";
         const tags = (r.topics||[]).slice(0,3).map(t => `<span class="tag">${esc(t)}</span>`).join("");
+        const cat = categoryOf(r);
         return `
-        <article class="card reveal${feat}" data-d="${i%3}" data-href="${esc(r.html_url)}" role="link" tabindex="0" aria-label="${esc(r.name)} — open repository">
-          <div class="top">
-            <span class="lang"><span class="dot" style="background:${colorFor(r.language)}"></span>${esc(r.language||"—")}</span>
-            <span class="stars">★ ${r.stargazers_count||0}</span>
-          </div>
-          <div class="body">
-            <h3>${esc(r.name)}</h3>
-            <p>${esc(r.description||"")}</p>
-            <div class="meta">${tags}${live}<span class="open">View repo →</span></div>
+        <article class="card reveal${feat}" data-d="${i%3}" data-href="${esc(r.html_url)}" data-cat="${cat}" data-seed="${esc(r.name)}" role="link" tabindex="0" aria-label="${esc(r.name)} — open repository">
+          <canvas class="sig" aria-hidden="true"></canvas>
+          <span class="ring" aria-hidden="true"></span>
+          <div class="card-inner">
+            <div class="top">
+              <span class="lang"><span class="dot" style="background:${colorFor(r.language)};color:${colorFor(r.language)}"></span>${esc(r.language||"—")}</span>
+              <span class="stars">★ ${r.stargazers_count||0}</span>
+            </div>
+            <div class="body">
+              <h3>${esc(r.name)}</h3>
+              <p>${esc(r.description||"")}</p>
+              <div class="meta">${tags}${live}<span class="open">View repo →</span></div>
+            </div>
           </div>
         </article>`;
       }).join("");
       observeReveals(grid);
+      initSignatures(grid);
+      initTilt(grid);
     }
 
     /* ---------- render stats + language bars ---------- */
