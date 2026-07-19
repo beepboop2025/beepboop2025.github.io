@@ -461,8 +461,8 @@
       repos: [
         { name:"palimpsest", description:"PALIMPSEST — China latent-state intelligence platform (DDTI censorship index + CBB economic-conditions engine) on a 26-collector OSINT pipeline → Kafka/TimescaleDB → FastAPI.", language:"Python", stargazers_count:2, html_url:"https://github.com/beepboop2025/palimpsest", homepage:null, topics:["osint","intel","china"] },
         { name:"DragonScope", description:"Bloomberg-style financial terminal built with React 19 + TypeScript — 45+ panels, ML-powered signals, in-browser SQL, real-time WebSocket feeds, correlation engine, and China market analytics.", language:"Python", stargazers_count:0, html_url:"https://github.com/beepboop2025/DragonScope", homepage:"https://dragonscope.vercel.app", topics:["fintech","react","ml"] },
-        { name:"groundcheck", description:"The grounding check agents run before they commit to an answer — an MCP server that verifies a factual claim against live sources and returns a verdict, confidence, and citations.", language:"Python", stargazers_count:0, html_url:"https://github.com/beepboop2025/groundcheck", homepage:"https://groundcheck-three.vercel.app", topics:["mcp","ai","agents"] },
-        { name:"pdf-toolkit-mcp", description:"Comprehensive MCP server for PDF operations — 37 tools for reading, creating, merging, splitting, watermarking, stamping, form filling, redacting, and more.", language:"TypeScript", stargazers_count:1, html_url:"https://github.com/beepboop2025/pdf-toolkit-mcp", homepage:null, topics:["mcp","pdf"] },
+        { name:"groundcheck", description:"The grounding check agents run before they commit to an answer — an MCP server that verifies a factual claim against live sources and returns a verdict, confidence, and citations.", language:"Python", stargazers_count:0, html_url:"https://github.com/beepboop2025/groundcheck", homepage:"https://groundcheck.seiche.info", topics:["mcp","ai","agents"] },
+        { name:"pdf-suite-mcp", description:"Comprehensive MCP server for PDF operations — 37 tools for reading, creating, merging, splitting, watermarking, stamping, form filling, redacting, and more.", language:"TypeScript", stargazers_count:1, html_url:"https://github.com/beepboop2025/pdf-suite-mcp", homepage:null, topics:["mcp","pdf"] },
         { name:"formary", description:"Formary — Beautiful form builder SaaS with drag-and-drop, conditional logic, Stripe payments, and analytics. Built with Next.js 14, Prisma, and TypeScript.", language:"TypeScript", stargazers_count:1, html_url:"https://github.com/beepboop2025/formary", homepage:null, topics:["saas","nextjs"] },
         { name:"snapmock", description:"Turn screenshots into beautiful mockups in seconds. Free, private, no sign-up. Built with Next.js.", language:"TypeScript", stargazers_count:1, html_url:"https://github.com/beepboop2025/snapmock", homepage:"https://snapmock-orpin.vercel.app", topics:["tool","nextjs"] },
         { name:"drug-price-observatory", description:"Public-good data explorer making UNODC/INCB drug-trade data legible — street prices, precursor flows, trafficking corridors. Educational/research use only.", language:"TypeScript", stargazers_count:0, html_url:"https://github.com/beepboop2025/drug-price-observatory", homepage:null, topics:["data","public-good"] },
@@ -707,7 +707,7 @@
     function renderMarquee(repos){
       const names = repos.filter(r=>!r.fork && r.name!==USER && !r.name.endsWith(".github.io"))
                          .slice(0,12).map(r=>r.name);
-      const seq = names.length ? names : ["palimpsest","DragonScope","groundcheck","pdf-toolkit-mcp"];
+      const seq = names.length ? names : ["palimpsest","DragonScope","groundcheck","pdf-suite-mcp"];
       const html = seq.map(n => `<span>${esc(n)} <span class="dot">◆</span></span>`).join("");
       document.getElementById("marquee-track").innerHTML = html + html;
     }
