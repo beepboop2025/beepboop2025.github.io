@@ -1,0 +1,19 @@
+# Mrinal's software portfolio
+
+> Public-data and financial-risk software by Mrinal, also known as beepboop2025 on GitHub.
+
+This site is the portfolio index for the products below. Use each product's own site or repository as the source for current methods, releases, limits, and results.
+
+## Products
+
+- [LiquiLens](https://liquilens.in/): Early warning for bank and lender distress from public filings, funding structure, regulatory thresholds, and market signals.
+- [Seiche](https://seiche.info/): Open-source dollar-funding stress terminal built from Federal Reserve and money-market data.
+- [Palimpsest](https://palimpsest.info/): Tamper-evident public records for AI evaluation results and censorship events.
+- [Undertow](https://liquilens-undertow.com/): Market-liquidity monitoring for exit cost, venue concentration, and depth collapse.
+- [Groundcheck](https://groundcheck.seiche.info/): Claim verification with verdicts, confidence scores, citations, and signed delivery receipts.
+- [NarcoScope](https://drug-price-observatory.vercel.app/): Research explorer for public UNODC, INCB, and EUDA drug-trade data.
+
+## Source
+
+- [GitHub profile](https://github.com/beepboop2025)
+- [All public repositories](https://github.com/beepboop2025?tab=repositories)
